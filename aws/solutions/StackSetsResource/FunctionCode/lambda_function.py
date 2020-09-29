@@ -336,7 +336,8 @@ def delete_stacks(set_region, set_id, accts, regions, ops_prefs):
 
 
 def update_stack_set(set_region, set_id, set_description, set_template,
-                     set_parameters, set_capabilities, set_tags, ops_prefs):
+                     set_parameters, set_capabilities, set_tags, ops_prefs,
+                     set_admin_role_arn, set_exec_role_name):
     # Set up for retries
     sleep_time = 15
     retries = 60
@@ -356,8 +357,10 @@ def update_stack_set(set_region, set_id, set_description, set_template,
                 Parameters=set_parameters,
                 Capabilities=set_capabilities,
                 Tags=set_tags,
-                OperationPreferences=ops_prefs
+                OperationPreferences=ops_prefs,
                 # OperationId='string'
+                AdministrationRoleARN=set_admin_role_arn,
+                ExecutionRoleName=set_exec_role_name
             )
             if response['ResponseMetadata']['HTTPStatusCode'] == 200:
                 return set_id
@@ -574,11 +577,21 @@ def update(event, context):
             raise Exception('Template URL not found during update event')
         logger.debug("TemplateURL: {}".format(set_template))
 
+        if 'AdministrationRoleARN' in event['ResourceProperties']:
+            set_admin_role_arn = event['ResourceProperties']['AdministrationRoleARN']
+        else:
+            set_admin_role_arn = ''
+
+        if 'ExecutionRoleName' in event['ResourceProperties']:
+            set_exec_role_name = event['ResourceProperties']['ExecutionRoleName']
+        else:
+            set_exec_role_name = ''
+
         # Update the StackSet
         logger.info("Updating StackSet resource {}".format(set_id))
         update_stack_set(os.environ['AWS_REGION'], set_id, set_description,
                          set_template, set_parameters, set_capabilities,
-                         set_tags, set_ops_prefs)
+                         set_tags, set_ops_prefs, set_admin_role_arn, set_exec_role_name)
 
     # Now, look for changes to stack instances
     logger.info("Evaluating stack instances")
