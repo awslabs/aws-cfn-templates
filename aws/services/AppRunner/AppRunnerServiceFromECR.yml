@@ -1,0 +1,70 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Metadata: 
+  License: Apache-2.0
+Description: 'AWS CloudFormation Sample Template AppRunnerService: This template demonstrates
+  the creation of a App Runner Service from existing ECR Repository.  **WARNING** This template creates an AWS App Runner Service. You will be billed for the AWS resources used if you create a stack from
+  this template.'
+
+Parameters:
+  ECRURL:
+    Description: URL of the ECR Repository.
+    Type: String
+    Default: "123456789012.dkr.ecr.us-east-1.amazonaws.com/ecr-name:latest"
+
+Resources:
+  AppRunnerRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - build.apprunner.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: 
+                  - "ecr:GetDownloadUrlForLayer"
+                  - "ecr:BatchGetImage"
+                  - "ecr:DescribeImages"
+                  - "ecr:GetAuthorizationToken"
+                  - "ecr:BatchCheckLayerAvailability"
+                Resource: '*'
+
+  AppRunner:
+    Type: AWS::AppRunner::Service
+    DependsOn: AppRunnerRole
+    Properties:
+      ServiceName: !Join
+            - ''
+            - - !Ref "AWS::StackName"
+              - '-service'
+      SourceConfiguration:
+        AuthenticationConfiguration:
+          AccessRoleArn: !GetAtt AppRunnerRole.Arn
+        AutoDeploymentsEnabled: true
+        ImageRepository:
+          ImageRepositoryType: ECR
+          ImageIdentifier: !Ref ECRURL
+          ImageConfiguration:
+            Port: 8080
+      # Default Configurations
+      # InstanceConfiguration:
+      #   Cpu: 1024
+      #   Memory: 2GB
+
+Outputs:
+  AppRunner:
+    Description: URL of the deployed App Runner Service
+    Value: !Join
+            - ''
+            - - "https://"
+              - !GetAtt AppRunner.ServiceUrl
