@@ -64,10 +64,17 @@ Parameters:
     Default: 'false'
     AllowedValues: ['true', 'false']
     ConstraintDescription: must be true or false.
+  EnableReadReplica:
+    Description: Enable the ReadReplica
+    Type: String
+    Default: 'true'
+    AllowedValues: ['true', 'false']
+    ConstraintDescription: must be true or false.
 Conditions:
   Is-EC2-VPC: !Or [!Equals [!Ref 'AWS::Region', eu-central-1], !Equals [!Ref 'AWS::Region',
       cn-north-1]]
   Is-EC2-Classic: !Not [{Condition: Is-EC2-VPC}]
+  Enable-Read-Replica: !Equals [ !Ref EnableReadReplica, 'true' ]
 Resources:
   DBEC2SecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -105,6 +112,7 @@ Resources:
     DeletionPolicy: Snapshot
   ReplicaDB:
     Type: AWS::RDS::DBInstance
+    Condition: Enable-Read-Replica
     Properties:
       SourceDBInstanceIdentifier: !Ref 'MasterDB'
       DBInstanceClass: !Ref 'DBInstanceClass'
@@ -121,5 +129,6 @@ Outputs:
         !GetAtt [MasterDB, Endpoint.Port], /, !Ref 'DBName']]
   ReplicaJDBCConnectionString:
     Description: JDBC connection string for the replica database
+    Condition: Enable-Read-Replica
     Value: !Join ['', ['jdbc:mysql://', !GetAtt [ReplicaDB, Endpoint.Address], ':',
         !GetAtt [ReplicaDB, Endpoint.Port], /, !Ref 'DBName']]
