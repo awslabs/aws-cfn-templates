@@ -53,7 +53,7 @@ For systemd it must become a dependency of an existing boot target. You can use 
 We set the instructions in the Metadata property files Key in order to create the cfn-hup configuration file, the cfn-hup hook, and the systemd file for cfn-hup /lib/systemd/systemcfn-hup.service.
 
 We will use the commands key in order to enable the service in systemd and start it.
-
+```
   "AWS::CloudFormation::Init" : {
           "configSets" : {
             "full_install" : [ "install_and_enable_cfn_hup" ]
@@ -105,7 +105,7 @@ We will use the commands key in order to enable the service in systemd and start
               }
            }
         }
-
+```
 
 You can verify after launching the stack that cfn-hup service has been started by executing systemctl status cfn-hup.
 
